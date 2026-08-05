@@ -1,8 +1,7 @@
-%%writefile app_pro.py
 import streamlit as st
 import plotly.graph_objects as go
 from datetime import datetime
-import pdfkit
+from weasyprint import HTML  # استخدمنا المكتبة الحديثة بدل pdfkit
 
 st.set_page_config(page_title="مقياس الخطبة الذكي", layout="centered")
 
@@ -89,7 +88,7 @@ if st.button("🧮 احسب النتيجة واستخرج التقرير", use_c
         importance = list(weight_options.keys())[list(weight_options.values()).index(weights[t])]
         table_rows += f"<tr><td>{t}</td><td>{scores[t]} / 10</td><td>{importance}</td></tr>"
 
-    # تصميم قالب HTML معدل لمنع تداخل الحروف
+    # تصميم قالب HTML معدل لمنع تداخل الحروف ويتوافق مع WeasyPrint
     html_template = f"""
     <!DOCTYPE html>
     <html dir="rtl" lang="ar">
@@ -97,7 +96,14 @@ if st.button("🧮 احسب النتيجة واستخرج التقرير", use_c
         <meta charset="UTF-8">
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap');
-            body {{ font-family: 'Cairo', sans-serif; padding: 30px; color: #333; }}
+            
+            /* إعدادات صفحة الطباعة لـ WeasyPrint */
+            @page {{
+                size: A4;
+                margin: 15mm;
+            }}
+            
+            body {{ font-family: 'Cairo', sans-serif; padding: 10px; color: #333; }}
             
             /* تنسيق الترويسة */
             .header {{ text-align: center; border-bottom: 2px solid {color}; padding-bottom: 10px; margin-bottom: 20px; }}
@@ -156,10 +162,9 @@ if st.button("🧮 احسب النتيجة واستخرج التقرير", use_c
     </html>
     """
 
-    # تحويل الـ HTML إلى PDF
-    options = {'encoding': "UTF-8", 'enable-local-file-access': None}
+    # تحويل الـ HTML إلى PDF باستخدام WeasyPrint
     try:
-        pdf_bytes = pdfkit.from_string(html_template, False, options=options)
+        pdf_bytes = HTML(string=html_template).write_pdf()
         
         st.download_button(
             label="📄 تحميل التقرير كملف PDF مرتب",
